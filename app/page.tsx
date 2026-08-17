@@ -1,69 +1,115 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import ChapterSelector from "@/components/ChapterSelector";
+import SituationBox from "@/components/SituationBox";
+import QuestionCard from "@/components/QuestionCard";
+import SummaryCard from "@/components/SummaryCard";
+import NextChapterBanner from "@/components/NextChapterBanner";
+import { chapters, getChapterById } from "@/lib/questions";
+import { getStoredChapter, setStoredChapter } from "@/lib/storage";
+
+// stage 1-3: reveal Q1-Q3, stage 4: reveal summary, stage 5: reveal next-chapter banner
+const MAX_STAGE = 5;
+const DEFAULT_CHAPTER_ID = 2;
 
 export default function Home() {
+  const [chapterId, setChapterId] = useState(DEFAULT_CHAPTER_ID);
+  const [stage, setStage] = useState(1);
+
+  useEffect(() => {
+    // localStorage isn't available during SSR, so the stored chapter is
+    // read once after mount rather than during initial render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChapterId(getStoredChapter(DEFAULT_CHAPTER_ID));
+  }, []);
+
+  const chapter = getChapterById(chapterId);
+
+  const selectChapter = useCallback((id: number) => {
+    setChapterId(id);
+    setStage(1);
+    setStoredChapter(id);
+  }, []);
+
+  const revealNext = useCallback(() => {
+    setStage((s) => Math.min(s + 1, MAX_STAGE));
+  }, []);
+
+  const reset = useCallback(() => {
+    setStage(1);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+
+      if (e.key === " " || e.key === "Spacebar" || e.key === "ArrowRight") {
+        e.preventDefault();
+        revealNext();
+      } else if (e.key.toLowerCase() === "r") {
+        reset();
+      } else if (["2", "3", "4", "5", "6"].includes(e.key)) {
+        selectChapter(Number(e.key));
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [revealNext, reset, selectChapter]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex min-h-screen flex-col bg-[#0f0f0f] px-6 py-8 text-white md:px-12">
+      <ChapterSelector
+        chapters={chapters}
+        activeId={chapterId}
+        onSelect={selectChapter}
+      />
+
+      <main className="mx-auto mt-10 flex w-full max-w-4xl flex-1 flex-col gap-6">
+        <SituationBox text={chapter.situation} />
+
+        <div className="flex flex-col gap-6">
+          {chapter.questions.map(
+            (question, i) =>
+              stage > i && (
+                <QuestionCard
+                  key={`${chapterId}-q${i}`}
+                  index={i + 1}
+                  text={question}
+                />
+              )
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {stage >= 4 && (
+          <SummaryCard key={`${chapterId}-summary`} text={chapter.summary} />
+        )}
+
+        {stage >= 5 && (
+          <NextChapterBanner key={`${chapterId}-next`} text={chapter.next} />
+        )}
+
+        {stage < MAX_STAGE && (
+          <button
+            type="button"
+            onClick={revealNext}
+            className="cursor-pointer self-center rounded-lg bg-[#2563eb] px-8 py-4 text-xl font-semibold text-white transition-colors duration-150 hover:bg-[#1d4ed8]"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            다음 발문 보기 →
+          </button>
+        )}
       </main>
+
+      <footer className="mt-10 flex justify-center">
+        <button
+          type="button"
+          onClick={reset}
+          className="cursor-pointer rounded-lg bg-[#374151] px-6 py-3 text-lg font-medium text-gray-200 transition-colors duration-150 hover:bg-[#4b5563]"
+        >
+          처음부터 다시
+        </button>
+      </footer>
     </div>
   );
 }
