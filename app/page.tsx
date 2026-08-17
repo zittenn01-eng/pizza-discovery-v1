@@ -16,6 +16,7 @@ const DEFAULT_CHAPTER_ID = 2;
 export default function Home() {
   const [chapterId, setChapterId] = useState(DEFAULT_CHAPTER_ID);
   const [stage, setStage] = useState(1);
+  const [resetCount, setResetCount] = useState(0);
 
   useEffect(() => {
     // localStorage isn't available during SSR, so the stored chapter is
@@ -38,6 +39,7 @@ export default function Home() {
 
   const reset = useCallback(() => {
     setStage(1);
+    setResetCount((c) => c + 1);
   }, []);
 
   useEffect(() => {
@@ -74,9 +76,10 @@ export default function Home() {
             (question, i) =>
               stage > i && (
                 <QuestionCard
-                  key={`${chapterId}-q${i}`}
+                  key={`${chapterId}-${resetCount}-q${i}`}
                   index={i + 1}
-                  text={question}
+                  text={question.text}
+                  choices={question.choices}
                 />
               )
           )}
