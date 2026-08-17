@@ -11,7 +11,9 @@ export interface Chapter {
   title: string;
   needs: string;
   situation: string;
-  questions: [QuestionItem, QuestionItem, QuestionItem];
+  // Chapters can have any number of questions — the reveal flow in
+  // app/page.tsx sizes itself to chapter.questions.length.
+  questions: QuestionItem[];
   summary: string;
   next: string;
 }
@@ -26,7 +28,7 @@ export const chapters: Chapter[] = [
       {
         text: "갑자기 소고기 값이 많이 올랐어요. 불고기 피자 한 조각을 7,000원으로 올려야 해요. 지금 코드에서 어떻게 고치면 될까요?",
         choices: [
-          "bulgogi_price 변수 값만 7000으로 바꾼다",
+          "price1 변수 값을 7000으로 바꾼다",
           "가격이 적힌 곳을 전부 찾아서 하나씩 바꾼다",
           "코드를 처음부터 다시 짠다",
           "잘 모르겠다",
@@ -41,16 +43,32 @@ export const chapters: Chapter[] = [
         ],
       },
       {
-        text: "마침 이번 달에 치즈 값은 싸졌어요. 치즈 피자는 2,800원으로 내리고 싶은데, 지금 코드로 가능한가요?",
+        text: "마침 이번 달에 치즈 값은 싸졌어요. 치즈 피자만 2,800원으로 내리고 싶은데, 지금 코드로 가능한가요?",
         choices: [
           "네, 가능하다 (변수가 각각 따로 있으니까)",
-          "아니요, 지금 구조로는 안 된다",
+          "아니요, 불가능해요(가격 변수가 price1 하나뿐 이니까요)",
+          "해봐야 알 것 같다",
+        ],
+      },
+       {
+        text: "불가능해요(가격 변수가 price1 하나뿐 이니까요) 그렇다면 가능하게 하려면 어떻게 해야 하죠?",
+        choices: [
+          "각 피자마다 다른 각값을 넣을 변수를 추가해야 한다",
+          "아니요, 불가능해요",
+          "해봐야 알 것 같다",
+        ],
+      },
+      {
+        text: "각 피자마다 다른 각값을 넣을 변수를 추가해봅시다. 그러면 이제 어떤 문제가 생길까요?",
+        choices: [
+          "아니요 문제가 없어요",
+          "페퍼로니 피자의 가격이 5개의 가격 중 어떤것인지 어떻게 알수있는 방법이 없다",
           "해봐야 알 것 같다",
         ],
       },
     ],
     summary:
-      "피자마다 조건에 따라 다른 가격을 지정하려면 어떤 문법이 필요할지, 다음 시간에 바로 배워볼게요.",
+      "피자마다 조건에 따라 다른 가격을 지정하고 피자명과 가격을 연결하는 것을 한국말로 표현해 볼까요? 그리고 그 한국어를 파이썬 syntax로 표현해 볼까요.",
     next: "3장 · 조건문 if/elif",
   },
   {

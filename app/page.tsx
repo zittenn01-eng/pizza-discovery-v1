@@ -9,8 +9,8 @@ import NextChapterBanner from "@/components/NextChapterBanner";
 import { chapters, getChapterById } from "@/lib/questions";
 import { getStoredChapter, setStoredChapter } from "@/lib/storage";
 
-// stage 1-3: reveal Q1-Q3, stage 4: reveal summary, stage 5: reveal next-chapter banner
-const MAX_STAGE = 5;
+// stage 1..N: reveal Q1..QN, stage N+1: reveal summary, stage N+2: reveal next-chapter banner
+// (N = chapter.questions.length, which varies per chapter)
 const DEFAULT_CHAPTER_ID = 2;
 
 export default function Home() {
@@ -26,6 +26,9 @@ export default function Home() {
   }, []);
 
   const chapter = getChapterById(chapterId);
+  const questionCount = chapter.questions.length;
+  const summaryStage = questionCount + 1;
+  const bannerStage = questionCount + 2;
 
   const selectChapter = useCallback((id: number) => {
     setChapterId(id);
@@ -34,8 +37,8 @@ export default function Home() {
   }, []);
 
   const revealNext = useCallback(() => {
-    setStage((s) => Math.min(s + 1, MAX_STAGE));
-  }, []);
+    setStage((s) => Math.min(s + 1, bannerStage));
+  }, [bannerStage]);
 
   const reset = useCallback(() => {
     setStage(1);
@@ -85,15 +88,15 @@ export default function Home() {
           )}
         </div>
 
-        {stage >= 4 && (
+        {stage >= summaryStage && (
           <SummaryCard key={`${chapterId}-summary`} text={chapter.summary} />
         )}
 
-        {stage >= 5 && (
+        {stage >= bannerStage && (
           <NextChapterBanner key={`${chapterId}-next`} text={chapter.next} />
         )}
 
-        {stage < MAX_STAGE && (
+        {stage < bannerStage && (
           <button
             type="button"
             onClick={revealNext}
